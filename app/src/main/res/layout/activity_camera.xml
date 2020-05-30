@@ -6,11 +6,16 @@
     android:layout_height="match_parent"
     tools:context=".CameraActivity">
 
-    <TextureView
-        android:id="@+id/textureView"
+    <FrameLayout
+        android:id="@+id/local_video_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="match_parent">
 
-        />
+        <TextureView
+            android:id="@+id/textureView"
+            android:layout_width="96dp"
+            android:layout_height="170dp" />
+    </FrameLayout>
+
 
 </RelativeLayout>
