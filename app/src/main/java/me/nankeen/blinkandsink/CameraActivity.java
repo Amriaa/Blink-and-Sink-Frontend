@@ -137,8 +137,11 @@ public class CameraActivity extends AppCompatActivity {
                 }
             });
         rtcClient.initializeSurfaceView(remoteVideoView);
+
+        // TODO: Pass local video through proxy sink
         rtcClient.initializeSurfaceView(localVideoView);
         rtcClient.startLocalCapture(localVideoView);
+
         // TODO: Signalling client change the backend
         Request request = new Request.Builder().url("ws://echo.websocket.org").build();
         signalingClient = new SignalingClient(new SignalingClientListener() {
@@ -167,7 +170,6 @@ public class CameraActivity extends AppCompatActivity {
         });
 
         signalingClientWS = okHttpClient.newWebSocket(request, signalingClient);
-        // TODO: Call!
     }
 
 }
