@@ -12,6 +12,14 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 
+import org.webrtc.DefaultVideoDecoderFactory;
+import org.webrtc.DefaultVideoEncoderFactory;
+import org.webrtc.EglBase;
+import org.webrtc.PeerConnection;
+import org.webrtc.PeerConnectionFactory;
+
+import static org.webrtc.EglBase.create;
+
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
