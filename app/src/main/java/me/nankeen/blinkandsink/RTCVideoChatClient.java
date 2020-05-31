@@ -29,6 +29,7 @@ public class RTCVideoChatClient {
     private PeerConnectionFactory peerConnectionFactory;
     private VideoCapturer videoCapturer;
     private VideoSource localVideoSource;
+    private ProxyVideoSink localVideoProxy;
     private PeerConnection peerConnection;
     private EglBase rootEglBase = create();
     private List<PeerConnection.IceServer> iceServer = new ArrayList<PeerConnection.IceServer>(){{
@@ -101,11 +102,13 @@ public class RTCVideoChatClient {
     }
 
     public void startLocalCapture(SurfaceViewRenderer localVideoOutput) {
+        localVideoProxy = new ProxyVideoSink();
         SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(Thread.currentThread().getName(), rootEglBase.getEglBaseContext());
         videoCapturer.initialize(surfaceTextureHelper, localVideoOutput.getContext(), localVideoSource.getCapturerObserver());
         videoCapturer.startCapture(320, 240, 60);
         VideoTrack localVideoTrack = peerConnectionFactory.createVideoTrack(LOCAL_TRACK_ID, localVideoSource);
-        localVideoTrack.addSink(localVideoOutput);
+        localVideoTrack.addSink(localVideoProxy);
+        localVideoProxy.setTarget(localVideoOutput);
     }
 
     private PeerConnection buildPeerConnection(PeerConnection.Observer observer) {

@@ -43,49 +43,4 @@ public class FullscreenActivity extends AppCompatActivity {
             }
         });
     }
-
-    @SuppressLint("InlinedApi")
-    private void show() {
-        // Show the system bar
-        mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-        mVisible = true;
-
-        // Schedule a runnable to display UI elements after a delay
-        mHideHandler.removeCallbacks(mHidePart2Runnable);
-        mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
-    }
-
-    /**
-     * Schedules a call to hide() in delay milliseconds, canceling any
-     * previously scheduled calls.
-     */
-    private void delayedHide(int delayMillis) {
-        mHideHandler.removeCallbacks(mHideRunnable);
-        mHideHandler.postDelayed(mHideRunnable, delayMillis);
-    }
-
-    private void initializeWebRTCPeerConnection() {
-        PeerConnectionFactory.InitializationOptions initializationOptions = PeerConnectionFactory.InitializationOptions.builder(this)
-                .setEnableInternalTracer(true)
-                .setFieldTrials("WebRTC-H264HighProfile/Enabled/")
-                .createInitializationOptions();
-        PeerConnectionFactory.initialize(initializationOptions);
-
-
-
-        PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-
-        EglBase rootEglBase = create();
-        DefaultVideoDecoderFactory defaultVideoDecoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());
-        DefaultVideoEncoderFactory defaultVideoEncoderFactory = new DefaultVideoEncoderFactory(
-                rootEglBase.getEglBaseContext(), true, true);
-
-        PeerConnectionFactory
-                .builder()
-                .setVideoDecoderFactory(defaultVideoDecoderFactory)
-                .setVideoEncoderFactory(defaultVideoEncoderFactory)
-                .setOptions(new PeerConnectionFactory.Options())
-                .createPeerConnectionFactory();
-    }
 }
