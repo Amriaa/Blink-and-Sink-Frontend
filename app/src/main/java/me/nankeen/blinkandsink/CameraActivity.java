@@ -4,6 +4,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.WebSocket;
 
 import android.Manifest;
 import android.content.Context;
@@ -31,10 +34,15 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
+
+import com.google.gson.Gson;
 
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
+import org.webrtc.SdpObserver;
+import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
@@ -60,20 +68,19 @@ public class CameraActivity extends AppCompatActivity {
         ORIENTATIONS.append(Surface.ROTATION_270,180);
     }
 
-    private String cameraId;
-    private CameraDevice cameraDevice;
-    private CameraCaptureSession cameraCaptureSessions;
-    private CaptureRequest.Builder captureRequestBuilder;
-    private Size imageDimension;
-    private ImageReader imageReader;
-
     private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private Handler mBackgroundHandler;
-    private HandlerThread mBackgroundThread;
 
     private RTCVideoChatClient rtcClient;
     private SurfaceViewRenderer remoteVideoView;
     private SurfaceViewRenderer localVideoView;
+    private ProgressBar remoteLoading;
+
+    private SignalingClient signalingClient;
+    private WebSocket signalingClientWS;
+    private OkHttpClient okHttpClient;
+    private SdpObserver sdpObserver = new SdpAdapter("SDP");
+
+    private Gson gson = new Gson();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +88,8 @@ public class CameraActivity extends AppCompatActivity {
         setContentView(R.layout.activity_camera);
         remoteVideoView = findViewById(R.id.remoteVideoView);
         localVideoView = findViewById(R.id.localVideoView);
+        remoteLoading = findViewById(R.id.remoteLoading);
+        okHttpClient = new OkHttpClient();
         checkCameraPermissions();
     }
 
@@ -114,7 +123,8 @@ public class CameraActivity extends AppCompatActivity {
                 @Override
                 public void onIceCandidate(IceCandidate iceCandidate) {
                     super.onIceCandidate(iceCandidate);
-                    // SignalingClient.get().sendIceCandidate(iceCandidate);
+                    signalingClientWS.send(gson.toJson(iceCandidate));
+                    rtcClient.addIceCandidate(iceCandidate);
                 }
 
                 @Override
@@ -127,9 +137,36 @@ public class CameraActivity extends AppCompatActivity {
                 }
             });
         rtcClient.initializeSurfaceView(remoteVideoView);
-        rtcClient.initializeSurfaceView(findViewById(R.id.localVideoView));
-        rtcClient.startLocalCapture(findViewById(R.id.localVideoView));
-        // TODO: Signalling client
+        rtcClient.initializeSurfaceView(localVideoView);
+        rtcClient.startLocalCapture(localVideoView);
+        // TODO: Signalling client change the backend
+        Request request = new Request.Builder().url("ws://echo.websocket.org").build();
+        signalingClient = new SignalingClient(new SignalingClientListener() {
+            @Override
+            public void onConnectionEstablished() {
+                // TODO: Add stuff to this?
+            }
+
+            @Override
+            public void onOfferReceived(SessionDescription description) {
+                rtcClient.onRemoteSessionReceived(description);
+                rtcClient.answer(sdpObserver);
+                remoteLoading.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onAnswerReceived(SessionDescription description) {
+                rtcClient.onRemoteSessionReceived(description);
+                remoteLoading.setVisibility(View.INVISIBLE);
+            }
+
+            @Override
+            public void onIceCandidateReceived(IceCandidate iceCandidate) {
+                rtcClient.addIceCandidate(iceCandidate);
+            }
+        });
+
+        signalingClientWS = okHttpClient.newWebSocket(request, signalingClient);
         // TODO: Call!
     }
 

@@ -2,15 +2,17 @@ package me.nankeen.blinkandsink;
 
 import android.app.Application;
 import android.content.Context;
-import android.util.Log;
-import android.view.SurfaceView;
 
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.DefaultVideoDecoderFactory;
 import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.EglBase;
+import org.webrtc.IceCandidate;
+import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.SdpObserver;
+import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
@@ -19,8 +21,6 @@ import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import androidx.annotation.Nullable;
 
 import static org.webrtc.EglBase.create;
 
@@ -35,12 +35,13 @@ public class RTCVideoChatClient {
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer();
     }};
 
-    public RTCVideoChatClient(Application context, PeerConnectionAdapter localVideoOutput) {
+    public RTCVideoChatClient(Application context, PeerConnection.Observer observer) {
         initializePeerConnectionFactory(context);
 
         peerConnectionFactory = buildPeerConnectionFactory();
         videoCapturer = getVideoCapturer(context);
         localVideoSource = peerConnectionFactory.createVideoSource(false);
+        peerConnection = buildPeerConnection(observer);
     }
 
     private void initializePeerConnectionFactory(Application context) {
@@ -109,5 +110,33 @@ public class RTCVideoChatClient {
 
     private PeerConnection buildPeerConnection(PeerConnection.Observer observer) {
         return peerConnectionFactory.createPeerConnection(iceServer, observer);
+    }
+
+    void onRemoteSessionReceived(SessionDescription description) {
+        peerConnection.setRemoteDescription(new SdpObserver() {
+            @Override
+            public void onCreateSuccess(SessionDescription sessionDescription) {
+            }
+
+            @Override
+            public void onSetSuccess() {
+            }
+
+            @Override
+            public void onCreateFailure(String s) {
+            }
+
+            @Override
+            public void onSetFailure(String s) {
+            }
+        }, description);
+    }
+
+    void answer(SdpObserver observer) {
+        peerConnection.createAnswer(observer, new MediaConstraints());
+    }
+
+    void addIceCandidate(IceCandidate iceCandidate) {
+        peerConnection.addIceCandidate(iceCandidate);
     }
 }
